@@ -82,7 +82,13 @@ def get_chain():
   }
   return jsonify(response), 200
 
-# if __name__ == '__main__':
-#     app.run()
+@app.route('/validate_chain', methods = ['GET'])
+def validate_chain():
+  chain = blockchain.chain
+  result = blockchain.is_chain_valid(chain)
+  return jsonify(result), 200
+
+if __name__ == '__main__':
+    app.run()
 # Running the app
-app.run(host = '0.0.0.0', port = 5000)
+# app.run(host = '0.0.0.0', port = 5000)
