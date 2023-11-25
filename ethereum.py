@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import json
 from flask import Flask, jsonify, request
-# import requests
+import requests
 from uuid import uuid4
 from urllib.parse import urlparse
 
@@ -13,7 +13,7 @@ class Blockchain:
     self.chain = []
     self.transactions = []
     self.create_block(proof = 1, previous_hash = '0')
-    self.node = set()
+    self.nodes = list()
 
   def create_block(self, proof, previous_hash):
     block = {
@@ -63,9 +63,9 @@ class Blockchain:
   
   def add_transaction(self, sender, receiver, amount):
     transaction = {
-      sender,
-      receiver,
-      amount
+      'sender': sender,
+      'receiver': receiver,
+      'amount': amount
     }
     self.transactions.append(transaction)
     previous_block = self.get_previous_block()
@@ -75,10 +75,29 @@ class Blockchain:
     parsed_url = urlparse(address)
     self.nodes.add(parsed_url.netloc)
 
+  def replace_chain(self):
+    network = self.nodes
+    longest_chain = None
+    max_length = len(self.chain)
+    for node in network:
+      response = requests.get(f'http://{node}/get_chain')
+      if response.status_code == 200:
+        length = response.json()['length']
+        chain = response.json()['chain']
+        if length > max_length and self.is_chain_valid(chain):
+          max_length = length
+          longest_chain = chain
+    if longest_chain:
+      self.chain = longest_chain
+      return True
+    return False
+
 
 # part 2 - Minig our Blockchain
 app = Flask(__name__)
 blockchain = Blockchain()
+
+node_address = str(uuid4()).replace('-', '')
 
 @app.route('/mine_block', methods = ['GET'])
 def mine_block():
@@ -86,13 +105,15 @@ def mine_block():
   previous_proof = previous_block['proof']
   proof = blockchain.proof_of_work(previous_proof)
   previous_hash = blockchain.hash(previous_block)
+  blockchain.add_transaction(sender = node_address, receiver = 'jack957', amount = 1)
   block = blockchain.create_block(proof, previous_hash)
   response = {
     'message': 'Congratulation!, you did mine block',
     'index': block['index'],
     'timestamp': block['timestamp'],
     'proof': block['proof'],
-    'previous_hash': block['previous_hash']
+    'previous_hash': block['previous_hash'],
+    'transactions': block['transactions']
   }
   return jsonify(response), 200
 
@@ -103,7 +124,7 @@ def get_chain():
     'length': len(blockchain.chain)
   }
   return jsonify(response), 200
-
+ 
 @app.route('/validate_chain', methods = ['GET'])
 def validate_chain():
   chain = blockchain.chain
@@ -119,6 +140,47 @@ def validate_chain():
       'result': False
     }
   
+  return jsonify(response), 200
+
+@app.route('/add_transaction', methods = ['POST'])
+def add_transaction():
+  json = request.get_json()
+  transaction_keys = ['sender', 'receiver', 'amount']
+  if not all (key in json for key in transaction_keys):
+    return "something is missing!", 400
+  index = blockchain.add_transaction(json['sender'], json['receiver'], json['amount'])
+  response = {
+    'message': f'{index}번째 transaction'
+    }
+  return jsonify(response), 201
+
+@app.route('/connect_node', methods = ['POST'])
+def connect_node():
+  json = request.get_json()
+  nodes = json.get('nodes')
+  if nodes is None:
+    return "No node", 400
+  for node in nodes:
+    blockchain.add_node(node)
+  response = {
+    "message": "node 연결 성공!",
+    "total-nodes": list(blockchain.nodes)
+  }
+  return jsonify(response), 201
+
+@app.route('/replace_chain', methods = ['GET'])
+def replace_chain():
+  is_chain_replaced = blockchain.replace_chain()
+  if is_chain_replaced:
+    response = {
+      "message": "new transaction이 반영된 체인으로 변경되었습니다",
+      "new_chain": blockchain.chain
+    }
+  else:
+    response = {
+      "message": "변화 없음",
+      "actual_chain": blockchain.chain
+    }
   return jsonify(response), 200
 
 if __name__ == '__main__':
