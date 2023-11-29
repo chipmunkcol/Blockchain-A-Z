@@ -61,3 +61,8 @@
       - EVM(Ethereum Virtual Machine) 바이러스와 프라이버시 문제 해결
       - Gas .script 에서 해결 못한 완전한 튜링의 해결책
       - DAO(탈중앙화된 자율조직)
+
+    2. Solidity
+      이더리움 네트워크에서 스마트 컨트랙트를 생성할 수 있도록 설계된 언어 (EVM에서 실행됨)
+
+[Solidity DOCS🐱‍🏍](https://docs.soliditylang.org/en/v0.8.23/introduction-to-smart-contracts.html)
