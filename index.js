@@ -1,0 +1,1 @@
+console.log('hello, github_package!');
