@@ -1,5 +1,5 @@
 {
-  "name": "github_package",
+  "name": "chipmunkcol/Blockchain-A-Z",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "publishConfig": {
-    "github_package:registry": "https://npm.pkg.github.com"
+    "chipmunkcol:registry": "https://npm.pkg.github.com"
   }
 }
